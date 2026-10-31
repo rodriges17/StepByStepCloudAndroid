@@ -1,6 +1,6 @@
 (() => {
   if(!window.AndroidPlatform)return;
-  window.stepNativePlayer={setFullscreen(enabled){AndroidPlatform.fullscreen(enabled);},reset(){AndroidPlatform.fullscreen(false);AndroidPlatform.rotate(false);}};
+  window.stepNativePlayer={insets(values){for(const side of ['left','right','bottom'])document.documentElement.style.setProperty(`--player-safe-${side}`,`${Math.max(0,Number(values[side])||0)}px`);},setFullscreen(enabled){AndroidPlatform.fullscreen(enabled);},reset(){AndroidPlatform.fullscreen(false);AndroidPlatform.rotate(false);}};
   addEventListener('DOMContentLoaded',()=>{
     for(const [selector,variable] of [['.overview > .heading','--brand-header-height'],['.page-intro','--overview-intro-height'],['.overview-filters','--overview-filters-height']]){
       const row=document.querySelector(selector);if(!row)continue;

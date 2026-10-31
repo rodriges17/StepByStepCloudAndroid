@@ -200,6 +200,13 @@ class CloudUiTest {
             js(scenario, "document.querySelector('#fullscreen').click()")
             await(scenario, "document.querySelector('#playerScreen').classList.contains('is-native-fullscreen')")
             assertEquals("true",js(scenario,"getComputedStyle(document.querySelector('#playerScreen .bottom-nav')).display==='none'"))
+            scenario.onActivity { activity ->
+                val flags = activity.window.decorView.systemUiVisibility
+                assertEquals(0, flags and android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
+                assertEquals(android.view.View.SYSTEM_UI_FLAG_FULLSCREEN, flags and android.view.View.SYSTEM_UI_FLAG_FULLSCREEN)
+                assertEquals(android.graphics.Color.TRANSPARENT, activity.window.navigationBarColor)
+            }
+            await(scenario, "parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--player-safe-bottom'))>=0")
             js(scenario, "window.AndroidAppUI.back()")
             await(scenario, "!document.querySelector('#playerScreen').hidden && !document.querySelector('#playerScreen').classList.contains('is-native-fullscreen')")
             js(scenario, "window.AndroidAppUI.back()")
