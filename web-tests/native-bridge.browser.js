@@ -952,3 +952,39 @@ test('fullscreen swipe reveals overlays, tap controls playback, and inactivity h
   await page.keyboard.press('ArrowDown');assert.equal(await page.locator('#playerScreen .screen-header').evaluate(n=>n.inert),true);
  }finally{await context.close();}
 });
+
+test('video taps distinguish pause feedback, hidden play and double-tap seeking',async()=>{
+ const {page,context}=await setup();try{
+  const f=await create(page,'Neue Videogesten');await page.evaluate(()=>AndroidAppUI.show('overview'));
+  await page.locator(`[data-figure-id="${f.id}"] .card-main`).click();
+  await page.waitForFunction(()=>document.querySelector('#learningVideo').readyState>=2);
+  await page.clock.install();
+  const stage=page.locator('#videoStage'), play=page.getByRole('button',{name:'Video starten',exact:true});
+  await play.waitFor({timeout:1500});
+  const b=await stage.boundingBox(),left={x:b.x+b.width*.15,y:b.y+b.height*.5};
+  await page.mouse.click(left.x,left.y);await page.clock.fastForward(350);
+  assert.equal(await play.isVisible(),false);
+  await page.mouse.click(left.x,left.y);await page.clock.fastForward(350);
+  assert.equal(await play.isVisible(),true);
+  await page.mouse.dblclick(left.x,left.y,{delay:80});await page.clock.fastForward(350);
+  assert.ok(await page.locator('#learningVideo').evaluate(v=>v.currentTime<.05&&v.paused));
+  assert.match(await page.locator('.player-seek-feedback').innerText(),/5 s/);
+  await play.click();await page.waitForFunction(()=>!document.querySelector('#learningVideo').paused);
+  await page.mouse.click(b.x+b.width*.5,b.y+b.height*.3);
+  assert.equal(await page.locator('#learningVideo').evaluate(v=>v.paused),true);
+  await page.locator('.player-pause-feedback').waitFor({state:'visible',timeout:1000});
+  await page.clock.fastForward(700);assert.equal(await play.isVisible(),true);
+ }finally{await context.close();}
+});
+
+test('native navigation insets keep fullscreen controls above system buttons without shrinking video',async()=>{
+ const {page,context}=await setup();try{
+  await page.setViewportSize({width:390,height:844});const f=await create(page,'Abstand');await page.evaluate(()=>AndroidAppUI.show('overview'));
+  await page.locator(`[data-figure-id="${f.id}"] .card-main`).click();await page.waitForFunction(()=>document.querySelector('#learningVideo').readyState>=2);
+  await page.locator('#fullscreen').click();await page.keyboard.press('ArrowUp');
+  const before=await page.locator('#videoStage').boundingBox();
+  await page.evaluate(()=>window.stepNativePlayer.insets({left:0,right:0,bottom:48}));
+  const bottom=await page.locator('#fullscreen').boundingBox();assert.ok(bottom.y+bottom.height<=844-48-8);
+  assert.deepEqual(await page.locator('#videoStage').boundingBox(),before);
+ }finally{await context.close();}
+});

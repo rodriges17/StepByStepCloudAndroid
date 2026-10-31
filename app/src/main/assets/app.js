@@ -4,7 +4,7 @@ import { mountTagPicker } from './tag-picker.js';
 import { createFigureEditSession } from './figure-edit-session.js';
 import { cloudLocalIndex } from './cloud-local.js';
 import { createLocalCardsView, tagIcon } from './figure-card.js';
-const APP_VERSION = '2026-10-30-compact-player-v1';
+const APP_VERSION = '2026-10-31-player-gestures-v1';
 import { createOverviewLoader } from './overview-loader.js';
 import { retireAndroidShellCaches } from './android-shell-cleanup.js';
 import { initBackup } from './backup-ui.js';
@@ -29,7 +29,7 @@ const channel = 'BroadcastChannel' in window ? new BroadcastChannel(`salsa-train
 const loop = new ABLoop();
 let playIntent = false, wakeLock = null;
 const video = $('learningVideo');
-const playerView = createPlayerView({screen:$('playerScreen'),video,isActive:()=>!!learning,togglePlayback:()=>{if(video.paused)play();else pause();}});
+const playerView = createPlayerView({screen:$('playerScreen'),video,isActive:()=>!!learning,togglePlayback:()=>{if(video.paused)play();else pause();},seekBy:seconds=>{const low=loop.b!==null?loop.a:0,high=loop.b!==null?loop.b:video.duration;if(Number.isFinite(high))video.currentTime=Math.max(low,Math.min(high,video.currentTime+seconds));}});
 
 function toast(message) { $('toast').textContent = message; $('toast').hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { $('toast').hidden = true; }, 4500); }
 function setError(id, message) { $(id).textContent = message ?? ''; $(id).hidden = !message; }
@@ -399,7 +399,7 @@ let playerLoad = 0;
 async function loadPlayerVideo(index, autoplay) {
   if (!learning?.records[index]) return;
   const active = learning, request = ++playerLoad, record = active.records[index];
-  playIntent = autoplay; video.pause(); releaseWakeLock();
+  playerView.mediaChanged(); playIntent = autoplay; video.pause(); releaseWakeLock();
   if (videoURL) { video.removeAttribute('src'); video.load(); releaseURL(videoURL); }
   learning.index = index; $('playerTitle').textContent = record.name || active.figure.title; $('playerVideoChoice').value = String(index); loop.clear(); updateLoop(); showPlayerError(null); $('videoLoading').hidden = false;
   $('seek').value = '0'; $('position').textContent = '0:00'; $('duration').textContent = timeLabel(learning.records[index].duration);

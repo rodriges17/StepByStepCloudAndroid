@@ -20,6 +20,7 @@ open class WebAppActivity : Activity() {
     protected lateinit var nativeFiles: NativeFiles
     protected lateinit var nativeMedia: NativeMedia
     private lateinit var nativeNetwork: NativeNetwork
+    private var playerFullscreen = false
     private var fullscreenView: View? = null
     private var fullscreenCallback: WebChromeClient.CustomViewCallback? = null
     private var fileCallback: ValueCallback<Array<Uri>>? = null
@@ -36,12 +37,14 @@ open class WebAppActivity : Activity() {
         frame.addView(web, android.widget.FrameLayout.LayoutParams(-1, -1))
         setContentView(frame)
         frame.setOnApplyWindowInsetsListener { view, insets ->
-            view.setPadding(
-                insets.systemWindowInsetLeft,
-                insets.systemWindowInsetTop,
-                insets.systemWindowInsetRight,
-                insets.systemWindowInsetBottom,
-            )
+            if (playerFullscreen) view.setPadding(0, 0, 0, 0)
+            else view.setPadding(insets.systemWindowInsetLeft, insets.systemWindowInsetTop,
+                insets.systemWindowInsetRight, insets.systemWindowInsetBottom)
+            val scale = resources.displayMetrics.density
+            val left = if (playerFullscreen) insets.systemWindowInsetLeft / scale else 0f
+            val right = if (playerFullscreen) insets.systemWindowInsetRight / scale else 0f
+            val bottom = if (playerFullscreen) insets.systemWindowInsetBottom / scale else 0f
+            web.evaluateJavascript("window.stepNativePlayer?.insets({left:$left,right:$right,bottom:$bottom})", null)
             // Do not pass the same system bars to WebView as another safe-area inset.
             if (android.os.Build.VERSION.SDK_INT >= 30) android.view.WindowInsets.CONSUMED
             else insets.consumeSystemWindowInsets()
@@ -211,12 +214,14 @@ open class WebAppActivity : Activity() {
                 @JavascriptInterface
                 fun fullscreen(enabled: Boolean) {
                     runOnUiThread {
-                        window.decorView.systemUiVisibility =
-                            if (enabled)
-                                View.SYSTEM_UI_FLAG_FULLSCREEN or
-                                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
-                                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                        playerFullscreen = enabled
+                        window.navigationBarColor = if (enabled) Color.TRANSPARENT else Color.rgb(23, 18, 31)
+                        if (android.os.Build.VERSION.SDK_INT >= 29) window.isNavigationBarContrastEnforced = !enabled
+                        window.decorView.systemUiVisibility = if (enabled)
+                            View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
+                                View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                             else 0
+                        frame.requestApplyInsets()
                     }
                 }
             },
