@@ -972,7 +972,7 @@ test('video taps distinguish pause feedback, hidden play and double-tap seeking'
   await play.click();await page.waitForFunction(()=>!document.querySelector('#learningVideo').paused);
   await page.mouse.click(b.x+b.width*.5,b.y+b.height*.3);
   assert.equal(await page.locator('#learningVideo').evaluate(v=>v.paused),true);
-  assert.equal(await page.locator('.player-pause-feedback').isVisible(),true);
+  await page.locator('.player-pause-feedback').waitFor({state:'visible',timeout:1000});
   await page.clock.fastForward(700);assert.equal(await play.isVisible(),true);
  }finally{await context.close();}
 });
