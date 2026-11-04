@@ -216,19 +216,20 @@ open class WebAppActivity : Activity() {
                 fun fullscreen(enabled: Boolean, controlsVisible: Boolean) {
                     runOnUiThread {
                         playerFullscreen = enabled
-                        val hideBars = enabled && !controlsVisible
+                        val hideStatusBar = enabled && !controlsVisible
                         window.statusBarColor = if (enabled) Color.TRANSPARENT else Color.rgb(23, 18, 31)
                         window.navigationBarColor = if (enabled) Color.TRANSPARENT else Color.rgb(23, 18, 31)
                         if (android.os.Build.VERSION.SDK_INT >= 29) window.isNavigationBarContrastEnforced = !enabled
                         window.decorView.systemUiVisibility = if (enabled)
-                            (if (hideBars) View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY else 0) or View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
+                            (if (hideStatusBar) View.SYSTEM_UI_FLAG_FULLSCREEN else 0) or View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
                                 View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                             else 0
                         if (android.os.Build.VERSION.SDK_INT >= 30) {
                             window.insetsController?.apply {
                                 systemBarsBehavior = android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-                                if (hideBars) hide(android.view.WindowInsets.Type.systemBars())
-                                else show(android.view.WindowInsets.Type.systemBars())
+                                show(android.view.WindowInsets.Type.navigationBars())
+                                if (hideStatusBar) hide(android.view.WindowInsets.Type.statusBars())
+                                else show(android.view.WindowInsets.Type.statusBars())
                                 setSystemBarsAppearance(0, android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS or android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS)
                             }
                         }
