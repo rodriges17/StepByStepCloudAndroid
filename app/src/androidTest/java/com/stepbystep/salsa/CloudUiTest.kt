@@ -203,7 +203,7 @@ class CloudUiTest {
             assertEquals("true",js(scenario,"getComputedStyle(document.querySelector('#playerScreen .bottom-nav')).display==='none'"))
             scenario.onActivity { activity ->
                 val flags = activity.window.decorView.systemUiVisibility
-                assertEquals(0, flags and android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
+                assertEquals(android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION, flags and android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
                 assertEquals(android.view.View.SYSTEM_UI_FLAG_FULLSCREEN, flags and android.view.View.SYSTEM_UI_FLAG_FULLSCREEN)
                 assertEquals(android.graphics.Color.TRANSPARENT, activity.window.navigationBarColor)
             }
@@ -211,10 +211,21 @@ class CloudUiTest {
             if (android.os.Build.VERSION.SDK_INT >= 30) {
                 var visible = false
                 scenario.onActivity { visible = it.window.decorView.rootWindowInsets.isVisible(android.view.WindowInsets.Type.navigationBars()) }
-                assertTrue("System navigation stays visible in fullscreen", visible)
+                assertTrue("System navigation hides with fullscreen controls", !visible)
             }
             js(scenario, "document.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowUp',bubbles:true}))")
             await(scenario, "document.querySelector('#playerScreen').classList.contains('controls-visible')")
+            if (android.os.Build.VERSION.SDK_INT >= 30) {
+                InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+                Thread.sleep(500)
+                scenario.onActivity { activity ->
+                    val insets = activity.window.decorView.rootWindowInsets
+                    assertTrue("Status bar appears with controls", insets.isVisible(android.view.WindowInsets.Type.statusBars()))
+                    assertTrue("Navigation appears with controls", insets.isVisible(android.view.WindowInsets.Type.navigationBars()))
+                }
+                assertEquals("true", js(scenario,"document.querySelector('#playerScreen .screen-header').getBoundingClientRect().top + parseFloat(getComputedStyle(document.querySelector('#playerScreen .screen-header')).paddingTop) >= parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--player-safe-top'))"))
+            }
+
             js(scenario, "window.AndroidAppUI.back()")
             await(scenario, "document.querySelector('#playerScreen').classList.contains('is-native-fullscreen') && !document.querySelector('#playerScreen').classList.contains('controls-visible')")
             js(scenario, "window.AndroidAppUI.back()")

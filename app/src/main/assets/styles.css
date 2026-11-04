@@ -596,3 +596,5 @@ button.cloud-local-open,
 
 /* A figure owns the screen until it closes, including its normal player view. */
 body.playing-screen .bottom-nav{display:none}
+
+.player-screen.is-native-fullscreen .screen-header{padding-top:var(--player-safe-top,0px)}
