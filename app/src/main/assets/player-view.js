@@ -45,6 +45,7 @@ export function createPlayerView({ screen, video, isActive = () => true, toggleP
 
   const hint = doc.createElement('p'); hint.className = 'player-fullscreen-hint'; hint.setAttribute('role', 'status'); hint.hidden = true; screen.append(hint);
   function paint() {
+    native()?.setFullscreen(full, controls);
     screen.classList.toggle('is-immersive', full);
     screen.classList.toggle('is-native-fullscreen', full && !!native());
     screen.classList.toggle('controls-visible', full && controls);
@@ -59,7 +60,6 @@ export function createPlayerView({ screen, video, isActive = () => true, toggleP
     if (!full) return false;
     clearTransient();
     full = false; controls = false; clearTimeout(hideTimer); generation++; clearTimeout(hintTimer); hint.hidden = true; paint();
-    native()?.setFullscreen(false);
     if (doc.fullscreenElement === screen) try { await doc.exitFullscreen(); } catch { /* App chrome still returns. */ }
     if (history && win.history.state?.playerFullscreen) win.history.back();
     return true;
@@ -69,7 +69,7 @@ export function createPlayerView({ screen, video, isActive = () => true, toggleP
     clearTransient();
     full = true; controls = false; gesture = null; interacting = false; selectionOpen = false; const request = ++generation; paint();
     if (history) win.history.pushState({...win.history.state, view:'player', playerFullscreen:true}, '', '#lernen');
-    if (native()) { native().setFullscreen(true); return; }
+    if (native()) return;
     // Android browser fullscreen hides OS navigation. Keep the app-only layout
     // there; native Android controls its system bars through the platform bridge.
     if (/Android/i.test(win.navigator.userAgent)) return;
@@ -121,6 +121,6 @@ export function createPlayerView({ screen, video, isActive = () => true, toggleP
     get full() { return full; }, get controlsVisible() { return full && controls; }, enter, exit,
     toggle() { return full ? exit() : enter(); },
     back() { if (!full) return false; if (controls) hide(); else void exit(); return true; },
-    reset() { clearActions(); gesture = null; interacting = false; selectionOpen = false; full = false; controls = false; clearTimeout(hideTimer); generation++; clearTimeout(hintTimer); hint.hidden = true; paint(); native()?.setFullscreen(false); }
+    reset() { clearActions(); gesture = null; interacting = false; selectionOpen = false; full = false; controls = false; clearTimeout(hideTimer); generation++; clearTimeout(hintTimer); hint.hidden = true; paint(); }
   };
 }

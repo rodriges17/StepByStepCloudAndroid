@@ -41,10 +41,11 @@ open class WebAppActivity : Activity() {
             else view.setPadding(insets.systemWindowInsetLeft, insets.systemWindowInsetTop,
                 insets.systemWindowInsetRight, insets.systemWindowInsetBottom)
             val scale = resources.displayMetrics.density
+            val top = if (playerFullscreen) insets.systemWindowInsetTop / scale else 0f
             val left = if (playerFullscreen) insets.systemWindowInsetLeft / scale else 0f
             val right = if (playerFullscreen) insets.systemWindowInsetRight / scale else 0f
             val bottom = if (playerFullscreen) insets.systemWindowInsetBottom / scale else 0f
-            web.evaluateJavascript("window.stepNativePlayer?.insets({left:$left,right:$right,bottom:$bottom})", null)
+            web.evaluateJavascript("window.stepNativePlayer?.insets({top:$top,left:$left,right:$right,bottom:$bottom})", null)
             // Do not pass the same system bars to WebView as another safe-area inset.
             if (android.os.Build.VERSION.SDK_INT >= 30) android.view.WindowInsets.CONSUMED
             else insets.consumeSystemWindowInsets()
@@ -212,23 +213,23 @@ open class WebAppActivity : Activity() {
                 }
 
                 @JavascriptInterface
-                fun fullscreen(enabled: Boolean) {
+                fun fullscreen(enabled: Boolean, controlsVisible: Boolean) {
                     runOnUiThread {
                         playerFullscreen = enabled
+                        val hideBars = enabled && !controlsVisible
+                        window.statusBarColor = if (enabled) Color.TRANSPARENT else Color.rgb(23, 18, 31)
                         window.navigationBarColor = if (enabled) Color.TRANSPARENT else Color.rgb(23, 18, 31)
                         if (android.os.Build.VERSION.SDK_INT >= 29) window.isNavigationBarContrastEnforced = !enabled
                         window.decorView.systemUiVisibility = if (enabled)
-                            View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
+                            (if (hideBars) View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY else 0) or View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
                                 View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                             else 0
                         if (android.os.Build.VERSION.SDK_INT >= 30) {
                             window.insetsController?.apply {
-                                // Navigation must stay visible, even if a previous
-                                // browser/custom-view fullscreen request hid it.
-                                show(android.view.WindowInsets.Type.navigationBars())
-                                if (enabled) hide(android.view.WindowInsets.Type.statusBars())
-                                else show(android.view.WindowInsets.Type.statusBars())
-                                setSystemBarsAppearance(0, android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS)
+                                systemBarsBehavior = android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                                if (hideBars) hide(android.view.WindowInsets.Type.systemBars())
+                                else show(android.view.WindowInsets.Type.systemBars())
+                                setSystemBarsAppearance(0, android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS or android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS)
                             }
                         }
                         frame.requestApplyInsets()

@@ -52,3 +52,15 @@ for(const native of [false,true])test(`${native?'native Android':'PWA'} Back hid
   assert.equal(view.back(),false,'normal player delegates closing the figure to its owner');
  }finally{await close();}
 });
+
+test('native system bars follow the fullscreen controls and return on exit',async()=>{
+ const {win,screen,view,close}=await fixture({android:true});try{
+  win.stepNativePlayer={setFullscreen(full,controls){win.barsVisible=!full||controls;}};
+  const nativeView=createPlayerView({screen,video:screen.querySelector('video'),native:()=>win.stepNativePlayer});
+  await nativeView.enter();assert.equal(win.barsVisible,false);
+  win.document.dispatchEvent(new win.KeyboardEvent('keydown',{key:'ArrowUp',bubbles:true}));
+  assert.equal(win.barsVisible,true);
+  nativeView.back();assert.equal(win.barsVisible,false);
+  await nativeView.exit({history:false});assert.equal(win.barsVisible,true);
+ }finally{await close();}
+});
