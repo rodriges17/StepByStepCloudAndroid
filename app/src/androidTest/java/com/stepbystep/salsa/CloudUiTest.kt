@@ -189,6 +189,7 @@ class CloudUiTest {
             await(scenario, "!!window.physicalPlayerSeeded && !!document.querySelector('[data-figure-id=\"'+window.physicalPlayerId+'\"] .card-main')")
             js(scenario, "document.querySelector('[data-figure-id=\"'+window.physicalPlayerId+'\"] .card-main').click()")
             await(scenario, "!document.querySelector('#playerScreen').hidden && document.querySelector('#learningVideo').videoWidth>0")
+            assertEquals("true",js(scenario,"[...document.querySelectorAll('.bottom-nav')].every(n=>getComputedStyle(n).display==='none')"))
             js(scenario, "document.querySelector('#rotatePlayer').click()")
             await(scenario, "innerWidth>innerHeight && document.querySelector('#playerScreen').classList.contains('is-landscape')")
             assertEquals("true",js(scenario,"getComputedStyle(document.querySelector('#playerScreen .bottom-nav')).display==='none' && getComputedStyle(document.querySelector('#playerDescription')).display==='none'"))
@@ -207,6 +208,15 @@ class CloudUiTest {
                 assertEquals(android.graphics.Color.TRANSPARENT, activity.window.navigationBarColor)
             }
             await(scenario, "parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--player-safe-bottom'))>=0")
+            if (android.os.Build.VERSION.SDK_INT >= 30) {
+                var visible = false
+                scenario.onActivity { visible = it.window.decorView.rootWindowInsets.isVisible(android.view.WindowInsets.Type.navigationBars()) }
+                assertTrue("System navigation stays visible in fullscreen", visible)
+            }
+            js(scenario, "document.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowUp',bubbles:true}))")
+            await(scenario, "document.querySelector('#playerScreen').classList.contains('controls-visible')")
+            js(scenario, "window.AndroidAppUI.back()")
+            await(scenario, "document.querySelector('#playerScreen').classList.contains('is-native-fullscreen') && !document.querySelector('#playerScreen').classList.contains('controls-visible')")
             js(scenario, "window.AndroidAppUI.back()")
             await(scenario, "!document.querySelector('#playerScreen').hidden && !document.querySelector('#playerScreen').classList.contains('is-native-fullscreen')")
             js(scenario, "window.AndroidAppUI.back()")
