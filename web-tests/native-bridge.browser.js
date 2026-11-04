@@ -988,3 +988,20 @@ test('native navigation insets keep fullscreen controls above system buttons wit
   assert.deepEqual(await page.locator('#videoStage').boundingBox(),before);
  }finally{await context.close();}
 });
+
+ test('figure navigation stays hidden through menu Back and fullscreen exit, then returns on close',async()=>{
+ const {page,context}=await setup();try{
+  const f=await create(page,'Navigation');await page.evaluate(()=>AndroidAppUI.show('overview'));
+  await page.locator(`[data-figure-id="${f.id}"] .card-main`).click();
+  assert.equal(await page.locator('#playerScreen .bottom-nav').isVisible(),false);
+  await page.locator('#fullscreen').click();await page.keyboard.press('ArrowUp');
+  await page.evaluate(()=>AndroidAppUI.back());
+  assert.equal(await page.locator('#playerScreen').evaluate(n=>n.classList.contains('is-immersive')),true);
+  assert.equal(await page.locator('#playerScreen .player-bottom').evaluate(n=>n.inert),true);
+  await page.evaluate(()=>AndroidAppUI.back());
+  await page.waitForFunction(()=>!document.querySelector('#playerScreen').classList.contains('is-immersive'));
+  assert.equal(await page.locator('#playerScreen .bottom-nav').isVisible(),false);
+  await page.evaluate(()=>AndroidAppUI.back());await page.locator('#playerScreen').waitFor({state:'hidden'});
+  assert.equal(await page.locator('body > .bottom-nav').isVisible(),true);
+ }finally{await context.close();}
+});

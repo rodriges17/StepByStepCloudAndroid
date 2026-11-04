@@ -221,6 +221,16 @@ open class WebAppActivity : Activity() {
                             View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
                                 View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                             else 0
+                        if (android.os.Build.VERSION.SDK_INT >= 30) {
+                            window.insetsController?.apply {
+                                // Navigation must stay visible, even if a previous
+                                // browser/custom-view fullscreen request hid it.
+                                show(android.view.WindowInsets.Type.navigationBars())
+                                if (enabled) hide(android.view.WindowInsets.Type.statusBars())
+                                else show(android.view.WindowInsets.Type.statusBars())
+                                setSystemBarsAppearance(0, android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS)
+                            }
+                        }
                         frame.requestApplyInsets()
                     }
                 }
