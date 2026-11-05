@@ -204,7 +204,7 @@ class CloudUiTest {
             scenario.onActivity { activity ->
                 val flags = activity.window.decorView.systemUiVisibility
                 assertEquals(0, flags and android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
-                assertEquals(android.view.View.SYSTEM_UI_FLAG_FULLSCREEN, flags and android.view.View.SYSTEM_UI_FLAG_FULLSCREEN)
+                assertEquals(0, flags and android.view.View.SYSTEM_UI_FLAG_FULLSCREEN)
                 assertEquals(android.graphics.Color.TRANSPARENT, activity.window.navigationBarColor)
             }
             await(scenario, "parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--player-safe-bottom'))>=0")
@@ -212,6 +212,7 @@ class CloudUiTest {
                 var visible = false
                 scenario.onActivity { visible = it.window.decorView.rootWindowInsets.isVisible(android.view.WindowInsets.Type.navigationBars()) }
                 assertTrue("System navigation stays visible without fullscreen controls", visible)
+                scenario.onActivity { assertTrue("Status bar stays visible without fullscreen controls", it.window.decorView.rootWindowInsets.isVisible(android.view.WindowInsets.Type.statusBars())) }
             }
             js(scenario, "document.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowUp',bubbles:true}))")
             await(scenario, "document.querySelector('#playerScreen').classList.contains('controls-visible')")
@@ -234,7 +235,7 @@ class CloudUiTest {
                 scenario.onActivity { activity ->
                     val insets = activity.window.decorView.rootWindowInsets
                     assertTrue("Navigation remains visible after hiding controls", insets.isVisible(android.view.WindowInsets.Type.navigationBars()))
-                    assertTrue("Status bar hides with controls", !insets.isVisible(android.view.WindowInsets.Type.statusBars()))
+                    assertTrue("Status bar remains visible after hiding controls", insets.isVisible(android.view.WindowInsets.Type.statusBars()))
                 }
             }
 

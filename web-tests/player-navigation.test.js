@@ -53,14 +53,14 @@ for(const native of [false,true])test(`${native?'native Android':'PWA'} Back hid
  }finally{await close();}
 });
 
-test('native system bars follow the fullscreen controls and return on exit',async()=>{
+test('native bridge receives fullscreen menu transitions and exit',async()=>{
  const {win,screen,view,close}=await fixture({android:true});try{
-  win.stepNativePlayer={setFullscreen(full,controls){win.barsVisible=!full||controls;}};
+  win.stepNativePlayer={setFullscreen(full,controls){win.nativeState={full,controls};}};
   const nativeView=createPlayerView({screen,video:screen.querySelector('video'),native:()=>win.stepNativePlayer});
-  await nativeView.enter();assert.equal(win.barsVisible,false);
+  await nativeView.enter();assert.deepEqual(win.nativeState,{full:true,controls:false});
   win.document.dispatchEvent(new win.KeyboardEvent('keydown',{key:'ArrowUp',bubbles:true}));
-  assert.equal(win.barsVisible,true);
-  nativeView.back();assert.equal(win.barsVisible,false);
-  await nativeView.exit({history:false});assert.equal(win.barsVisible,true);
+  assert.deepEqual(win.nativeState,{full:true,controls:true});
+  nativeView.back();assert.deepEqual(win.nativeState,{full:true,controls:false});
+  await nativeView.exit({history:false});assert.deepEqual(win.nativeState,{full:false,controls:false});
  }finally{await close();}
 });
