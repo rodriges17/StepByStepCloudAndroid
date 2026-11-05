@@ -1005,3 +1005,31 @@ test('native navigation insets keep fullscreen controls above system buttons wit
   assert.equal(await page.locator('body > .bottom-nav').isVisible(),true);
  }finally{await context.close();}
 });
+
+test('Android Cloud shows cached thumbnails immediately when navigating back without another poster request',async()=>{
+ const {page,context}=await setup();try{
+  const poster=await page.evaluate(()=>{const c=document.createElement('canvas');c.width=64;c.height=64;c.getContext('2d').fillRect(0,0,64,64);return c.toDataURL('image/jpeg').split(',')[1];});
+  let reads=0;
+  await page.route('**/functions/v1/cloud',route=>{reads++;return route.fulfill({contentType:'application/json',body:JSON.stringify({poster,kind:'local',can_write:false})});});
+  await page.evaluate(async()=>{
+   const {createPosterView}=await import('./cloud-posters.js');
+   const root=document.createElement('div');root.id='cached-poster-probe';root.style.cssText='position:fixed;top:0;left:0;width:64px;height:64px;z-index:9999';document.body.append(root);
+   window.mountCachedPoster=(created_at='one')=>{window.cachedPosterView?.dispose();root.replaceChildren();const picture=document.createElement('div');root.append(picture);window.cachedPosterView=createPosterView(root,null);cachedPosterView.add(picture,{id:'cached-revision',created_at,videos:[{id:'video'}]});return !!picture.querySelector('img.cloud-thumbnail');};
+   mountCachedPoster();
+  });
+  await page.locator('#cached-poster-probe img.cloud-thumbnail').waitFor();
+  assert.equal(reads,1);
+  assert.equal(await page.evaluate(()=>mountCachedPoster()),true,'A previously loaded thumbnail must appear before lazy loading runs');
+  await page.waitForTimeout(100);
+  assert.equal(reads,1,'Navigating back must reuse the cached poster');
+  const refreshed=page.waitForResponse(response=>response.url().includes('/functions/v1/cloud'));
+  await page.evaluate(()=>{const now=Date.now;Date.now=()=>now()+61000;mountCachedPoster();window.cachedImageBeforeRefresh=document.querySelector('#cached-poster-probe img');});
+  await refreshed;await page.waitForTimeout(100);
+  assert.equal(reads,2,'Older posters are still revalidated in the background');
+  assert.equal(await page.evaluate(()=>cachedImageBeforeRefresh===document.querySelector('#cached-poster-probe img')),true,'An unchanged server poster must not replace the visible cached image');
+  assert.equal(await page.evaluate(()=>mountCachedPoster('two')),false,'A changed revision must not reuse the previous image');
+  await page.locator('#cached-poster-probe img.cloud-thumbnail').waitFor();
+  assert.equal(reads,3);
+  await page.evaluate(()=>cachedPosterView.dispose());
+ }finally{await context.close();}
+});

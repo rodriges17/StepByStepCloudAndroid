@@ -1,4 +1,4 @@
-import { readCloudCache, writeCloudCache, cloudCacheRevision } from './cloud-cache.js';
+import { readCloudCache, writeCloudCache, cloudCacheRevision, peekCloudCache } from './cloud-cache.js';
 import { cloudCall, cloudIdentity } from './cloud-api.js';
 import { listFigures, figureMedia } from './storage.js';
 const LIMIT = 65536;
@@ -88,18 +88,31 @@ export function createPosterView(root, user) {
       const placeholder = document.createElement('span'); placeholder.className = 'cloud-thumbnail-placeholder'; placeholder.setAttribute('aria-hidden', 'true');
       placeholder.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1.5"/><path d="m4 18 5-6 4 4 3-4 4 6"/></svg>';
       heading.prepend(placeholder);
+      const key = `${revision.id}:${revision.created_at ?? ''}`;
+      const warm = peekCloudCache(owner, `poster:${key}`);
+      let displayed = placeholder, displayedBytes;
+      // Reopening a cached view must not wait for the lazy-loading observer.
+      if (warm) {
+        displayedBytes = warm.value.bytes;
+        const image = document.createElement('img'), url = URL.createObjectURL(new Blob([displayedBytes], { type: 'image/jpeg' })); urls.add(url);
+        image.className = 'cloud-thumbnail'; image.alt = ''; image.width = 64; image.height = 64; image.src = url;
+        image.onerror = () => { if (displayed === image) { image.replaceWith(placeholder); displayed = placeholder; displayedBytes = null; } };
+        placeholder.replaceWith(image); displayed = image;
+      }
       jobs.set(heading, async () => {
         const active = () => !controller.signal.aborted && heading.isConnected && owner === cloudIdentity() && generation === cloudCacheRevision(owner);
-        let displayed = placeholder;
         const show = async blob => {
           if (!blob || !active()) return;
+          const bytes = await blob.arrayBuffer(); if (!active()) return;
+          const previousBytes = displayedBytes && new Uint8Array(displayedBytes);
+          if (previousBytes && bytes.byteLength === previousBytes.byteLength && new Uint8Array(bytes).every((value, index) => value === previousBytes[index])) return;
           const image = document.createElement('img'), url = URL.createObjectURL(blob); urls.add(url);
           image.className = 'cloud-thumbnail'; image.alt = ''; image.width = 64; image.height = 64; image.src = url;
-          try { await image.decode(); if (active()) { const previous = displayed; displayed.replaceWith(image); displayed = image; if (previous.tagName === 'IMG') { URL.revokeObjectURL(previous.src); urls.delete(previous.src); } } else { URL.revokeObjectURL(url); urls.delete(url); } } catch { URL.revokeObjectURL(url); urls.delete(url); }
+          try { await image.decode(); if (active()) { const previous = displayed; displayed.replaceWith(image); displayed = image; displayedBytes = bytes; if (previous.tagName === 'IMG') { URL.revokeObjectURL(previous.src); urls.delete(previous.src); } } else { URL.revokeObjectURL(url); urls.delete(url); } } catch { URL.revokeObjectURL(url); urls.delete(url); }
         };
         try {
           const saved = await cachedPoster(owner, `${revision.id}:${revision.created_at ?? ''}`);
-          if (saved) { await show(saved.blob); if (Date.now() - saved.updatedAt < 60000 || !navigator.onLine) return; }
+          if (saved) { if (!warm) await show(saved.blob); if (Date.now() - saved.updatedAt < 60000 || !navigator.onLine) return; }
           if (!active()) return;
           const remote = await cloudCall('poster_get', { revision: revision.id }); if (!active()) return;
           let blob = remote.poster ? fromBase64(remote.poster) : saved?.blob, local;

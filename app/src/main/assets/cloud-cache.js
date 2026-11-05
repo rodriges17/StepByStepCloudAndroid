@@ -4,6 +4,7 @@ const memory = new Map(), revisions = new Map();
 let opening;
 export const cloudCacheRevision = owner => revisions.get(owner) ?? 0;
 const id = (owner, key) => JSON.stringify([owner, key]);
+export const peekCloudCache = (owner, key) => memory.get(id(owner, key)) ?? null;
 function database() {
   return opening ??= new Promise((resolve, reject) => {
     const request = indexedDB.open(`step-cloud-cache:${scope}:v1`, 1);
