@@ -215,7 +215,7 @@ test('folder player opens before media is read, loads only selected videos and i
  await page.locator(`[data-figure-id="${copy.id}"] .card-main`).click();
  await page.waitForFunction(()=>window.videoReads.length===1);
  assert.equal(await page.locator('#playerScreen').evaluate(e=>e.hidden),false);
- await page.locator('#playerVideoChoice').selectOption('1');
+ await page.locator('#playerVideoChoice').click();await page.locator('#playerVideoDialog .player-video-option').nth(1).click();
  await page.waitForFunction(()=>window.videoReads.length===2);
  await page.evaluate(()=>window.pendingReads[1]());
  await page.waitForFunction(()=>document.querySelector('#learningVideo').readyState>=2);
@@ -223,9 +223,13 @@ test('folder player opens before media is read, loads only selected videos and i
  await page.evaluate(()=>window.pendingReads[0]());
  await page.waitForTimeout(100);
  assert.equal(await page.locator('#learningVideo').getAttribute('src'),second);
- await page.locator('#playerVideoChoice').selectOption('0');
+ await page.locator('#playerVideoChoice').click();await page.locator('#playerVideoDialog .player-video-option').nth(0).click();
  await page.waitForFunction(()=>document.querySelector('#learningVideo').readyState>=2);
  assert.equal(await page.evaluate(()=>window.videoReads.length),2,'switching back must reuse the verified video');
+ await page.locator('#playerVideoChoice').click();
+ await page.evaluate(()=>AndroidAppUI.back());
+ await page.waitForFunction(()=>!document.querySelector('#playerVideoDialog').open);
+ assert.equal(await page.locator('#playerScreen').evaluate(e=>e.hidden),false,'Back closes the sheet before closing the player');
  await page.evaluate(()=>AndroidAppUI.back());
  await page.waitForFunction(()=>document.querySelector('#playerScreen').hidden);
  await page.evaluate(async()=>{
