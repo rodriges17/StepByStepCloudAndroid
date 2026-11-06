@@ -704,7 +704,7 @@ class NativeWorkflows(
             val lib = detail.getJSONObject("library")
             val root = begin(lib.optString("title")) { cloudHome("libraries") }
             root.addView(text(lib.optString("description")))
-            val link = "https://rodriges17.github.io/SalsaAppCloud/?library=${Uri.encode(id)}"
+            val link = "https://rodriges17.github.io/StepByStepCloudPWA/?library=${Uri.encode(id)}"
             root.addView(button("Bibliothekslink kopieren") { copy(link) })
             if (lib.optString("visibility") == "private") {
                 root.addView(text("Zum Öffnen sind Anmeldung und Bibliotheksberechtigung erforderlich."))

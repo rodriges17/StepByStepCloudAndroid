@@ -8,8 +8,8 @@
 
 ## Kurzanleitungen
 
-- **[Bibliotheken teilen](https://rodriges17.github.io/SalsaAppCloud/anleitungen/teilen.html)**
-- **[Personen & Zugriff verwalten](https://rodriges17.github.io/SalsaAppCloud/anleitungen/benutzerverwaltung.html)**
+- **[Bibliotheken teilen](https://rodriges17.github.io/StepByStepCloudPWA/anleitungen/teilen.html)**
+- **[Personen & Zugriff verwalten](https://rodriges17.github.io/StepByStepCloudPWA/anleitungen/benutzerverwaltung.html)**
 
 Die Anleitungen gelten für Android und Cloud-PWA. Die eigenständigen [HTML-Dateien liegen im Cloud-Repository](https://github.com/rodriges17/SalsaAppCloud/tree/main/pwa/anleitungen).
 

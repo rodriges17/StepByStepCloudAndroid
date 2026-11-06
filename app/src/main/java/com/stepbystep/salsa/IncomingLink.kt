@@ -18,7 +18,7 @@ internal sealed class IncomingLink {
                     val uri = URI(candidate)
                     if (uri.scheme != "https") return null
                     val path = uri.path.orEmpty()
-                    val pages = uri.host == "rodriges17.github.io" && path.startsWith("/SalsaAppCloud/")
+                    val pages = uri.host == "rodriges17.github.io" && (path.startsWith("/StepByStepCloudPWA/") || path.startsWith("/SalsaAppCloud/"))
                     val authentication = uri.host == "tzaprobvauikssnpiucl.supabase.co" && path.startsWith("/auth/v1/verify")
                     if (!pages && !authentication) return null
                     val parameters = linkedMapOf<String, String>()
