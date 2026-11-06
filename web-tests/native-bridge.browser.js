@@ -540,7 +540,7 @@ test('Android Cloud navigation remains usable and shares a pending device-folder
     if(request.op==='stat'&&request.path.includes('/media/')){
      probes++;
      if(probes===1)setTimeout(()=>[...document.querySelectorAll('#cloudNavigation button')].find(b=>b.textContent==='Bibliotheken').click(),0);
-     if(probes===total)window.navigationDuringScan=[...document.querySelectorAll('#cloudBody h3')].some(h=>h.textContent==='Bibliotheken');
+     if(probes===total)window.navigationDuringScan=[...document.querySelectorAll('#cloudListHeader h3')].some(h=>h.textContent==='Bibliotheken');
     }
     return call(raw);
    };
