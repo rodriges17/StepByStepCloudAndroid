@@ -4,9 +4,13 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class IncomingLinkTest {
-    private val pages = "https://rodriges17.github.io/SalsaAppCloud/"
+    private val pages = "https://rodriges17.github.io/StepByStepCloudPWA/"
     private val auth = "https://tzaprobvauikssnpiucl.supabase.co/auth/v1/verify"
     private val token = "valid-token-hash_1234567890"
+
+    @Test fun legacyLibraryLinksRemainSupported() {
+        assertEquals(IncomingLink.Library("abc"), IncomingLink.classify("https://rodriges17.github.io/SalsaAppCloud/?library=abc"))
+    }
 
     @Test fun trustedLibraryLinksDecodeTheFirstIdentifierAndAllowCloudHome() {
         assertEquals(IncomingLink.Library("Größe 1"), IncomingLink.classify("$pages?library=Gr%C3%B6%C3%9Fe+1&library=second"))
